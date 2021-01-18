@@ -12,9 +12,9 @@ import pymongo
 import config
 
 mclient = pymongo.MongoClient(
-	config.mongoHost,
-	username=config.mongoUser,
-	password=config.mongoPass
+    config.mongoHost,
+    username=config.mongoUser,
+    password=config.mongoPass
 )
 
 linkRe = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[#-_]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
@@ -30,6 +30,7 @@ timeUnits = {
 
 # Most NintenDeals code (decommissioned 4/25/2020) was removed on 12/09/2020
 # https://github.com/rNintendoSwitch/MechaBowser/commit/d1550f1f4951c35ca953e1ceacaae054fc9d4963
+
 
 async def message_archive(archive: typing.Union[discord.Message, list], edit=None):
     db = mclient.modmail.logs
@@ -99,10 +100,10 @@ async def message_archive(archive: typing.Union[discord.Message, list], edit=Non
                 }
             ]
         })
-        
+
     else:
         messages = []
-        for msg in archive: # TODO: attachment CDN urls should be posted as message
+        for msg in archive:  # TODO: attachment CDN urls should be posted as message
             messages.append({
                 'timestamp': str(msg.created_at),
                 'message_id': str(msg.id),
@@ -156,6 +157,7 @@ async def message_archive(archive: typing.Union[discord.Message, list], edit=Non
 
     return archiveID
 
+
 async def store_user(member, messages=0):
     db = mclient.bowser.users
     # Double check exists
@@ -172,9 +174,9 @@ async def store_user(member, messages=0):
 
     userData = {
         '_id': member.id,
-	    'roles': roleList,
-	    'joins': [(datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(0)).total_seconds()],
-	    'leaves': [],
+        'roles': roleList,
+        'joins': [(datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(0)).total_seconds()],
+        'leaves': [],
         'lockdown': False,
         'jailed': False,
         'friendcode': None,
@@ -190,11 +192,12 @@ async def store_user(member, messages=0):
     }
     db.insert_one(userData)
 
+
 async def issue_pun(user, moderator, _type, reason=None, expiry=None, active=True, context=None, _date=None, public=True, strike_count=None):
     db = mclient.bowser.puns
     timestamp = time.time() if not _date else _date
     docID = str(uuid.uuid4())
-    while db.find_one({'_id': docID}): # Uh oh, duplicate uuid generated
+    while db.find_one({'_id': docID}):  # Uh oh, duplicate uuid generated
         docID = str(uuid.uuid4())
 
     db.insert_one({
@@ -215,6 +218,7 @@ async def issue_pun(user, moderator, _type, reason=None, expiry=None, active=Tru
         'public_log_channel': None
     })
     return docID
+
 
 def resolve_duration(data):
     '''
@@ -240,6 +244,7 @@ def resolve_duration(data):
 
     return datetime.datetime.utcnow() + datetime.timedelta(seconds=value + 1)
 
+
 def humanize_duration(duration):
     '''
     Takes a datetime object and returns a prettified
@@ -256,12 +261,13 @@ def humanize_duration(duration):
             duration = datetime.datetime.utcnow() - datetime.timedelta(seconds=duration.total_seconds())
     diff_delta = duration - now
     diff = int(diff_delta.total_seconds())
-	
+
     if diff < 0:
-      diff = -diff
-      ago = ' ago'
-    else: ago = ''
-	
+        diff = -diff
+        ago = ' ago'
+    else:
+        ago = ''
+
     minutes, seconds = divmod(diff, 60)
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
@@ -281,9 +287,11 @@ def humanize_duration(duration):
 
             else:
                 expires.append('{} {}'.format(units[x], unit_strs[x]))
-    
-    if not expires: return '0 seconds'
+
+    if not expires:
+        return '0 seconds'
     return ', '.join(expires) + ago
+
 
 async def mod_cmd_invoke_delete(channel):
     if channel.id in config.showModCTX or channel.category_id in config.showModCTX:
@@ -292,8 +300,10 @@ async def mod_cmd_invoke_delete(channel):
     else:
         return True
 
+
 async def send_modlog(bot, channel, _type, footer, reason, user=None, username=None, userid=None, moderator=None, expires=None, extra_author=None, timestamp=None, public=False, delay=300):
-    if user: # Keep compatibility with sources without reliable user objects (i.e. ban), without forcing a long function every time
+    # Keep compatibility with sources without reliable user objects (i.e. ban), without forcing a long function every time
+    if user:
         username = str(user)
         userid = user.id
 
@@ -320,7 +330,7 @@ async def send_modlog(bot, channel, _type, footer, reason, user=None, username=N
     embed.set_footer(text=footer)
     embed.add_field(name='User', value=f'<@!{userid}>', inline=True)
     if moderator:
-        if not isinstance(moderator, str): # Convert to str
+        if not isinstance(moderator, str):  # Convert to str
             moderator = moderator.mention
 
         embed.add_field(name='Moderator', value=moderator, inline=True)
@@ -332,8 +342,10 @@ async def send_modlog(bot, channel, _type, footer, reason, user=None, username=N
     await channel.send(embed=embed)
     if public:
         event_loop = bot.loop
-        post_action = event_loop.call_later(delay, event_loop.create_task, send_public_modlog(bot, footer, bot.get_channel(config.publicModChannel), expires))
+        post_action = event_loop.call_later(delay, event_loop.create_task, send_public_modlog(
+            bot, footer, bot.get_channel(config.publicModChannel), expires))
         return post_action
+
 
 async def send_public_modlog(bot, id, channel, expires=None, mock_document=None):
     db = mclient.bowser.puns
@@ -359,7 +371,8 @@ async def send_public_modlog(bot, id, channel, expires=None, mock_document=None)
 
     author += f'| {user} ({user.id})'
 
-    embed = discord.Embed(color=config.punColors[doc['type']], timestamp=datetime.datetime.utcfromtimestamp(doc['timestamp']))
+    embed = discord.Embed(color=config.punColors[doc['type']],
+                          timestamp=datetime.datetime.utcfromtimestamp(doc['timestamp']))
     embed.set_author(name=author)
     embed.set_footer(text=id)
     embed.add_field(name='User', value=user.mention, inline=True)
@@ -367,7 +380,7 @@ async def send_public_modlog(bot, id, channel, expires=None, mock_document=None)
         embed.add_field(name='Expires', value=expires)
     if doc['sensitive']:
         embed.add_field(name='Reason', value='This action\'s reason has been marked sensitive by the moderation team and is hidden. See <#671003325495509012> for more information on why logs are marked sensitive')
-    elif doc['context'] == 'vote': # Warning review
+    elif doc['context'] == 'vote':  # Warning review
         embed.add_field(name='Reason', value='A moderator has reviewed a previous warning and reduced it by one level')
     else:
         embed.add_field(name='Reason', value=doc['reason'])
@@ -382,6 +395,7 @@ async def send_public_modlog(bot, id, channel, expires=None, mock_document=None)
             'public_log_message': message.id,
             'public_log_channel': channel.id
         }})
+
 
 def format_pundm(_type, reason, moderator, details=None, auto=False):
     infoStrs = {
@@ -417,16 +431,19 @@ def format_pundm(_type, reason, moderator, details=None, auto=False):
 
     return punDM
 
+
 def spans_overlap_link(string: str, spans: typing.List[typing.Tuple[int, int]]) -> typing.List[bool]:
     '''
     Returns list of booleans for every character span passed (as `(start, end)`) if they overlap a link in given string.
     '''
-    START, END = (0, 1) # Consts for readablity of (start, end) tuples
+    START, END = (0, 1)  # Consts for readablity of (start, end) tuples
 
     links = linkRe.finditer(string)
 
-    if not spans: return []
-    if not links: return [False] * len(spans)
+    if not spans:
+        return []
+    if not links:
+        return [False] * len(spans)
 
     link_spans = list(map(lambda m: m.span(), links))
     overlaps = [False] * len(spans)
@@ -440,6 +457,7 @@ def spans_overlap_link(string: str, spans: typing.List[typing.Tuple[int, int]]) 
 
     return overlaps
 
+
 def re_match_nonlink(pattern: typing.Pattern, string: str) -> typing.Optional[bool]:
     '''
     Returns if any regex match for given pattern in string does not overlap a link.
@@ -452,22 +470,24 @@ def re_match_nonlink(pattern: typing.Pattern, string: str) -> typing.Optional[bo
     matches = list(re.finditer(pattern, string))
     spans = list(map(lambda m: m.span(), matches))
 
-    if not matches: return None
+    if not matches:
+        return None
 
     overlaps = spans_overlap_link(string, spans)
     return any(not overlap for overlap in overlaps)
 
-async def send_paginated_embed(bot:  discord.ext.commands.Bot,
+
+async def send_paginated_embed(bot: discord.ext.commands.Bot,
                                channel: discord.TextChannel,
-                               fields: typing.List[typing.Dict], # name: str , value: str, inline: optional bool
-                               *, 
-                               owner: typing.Optional[discord.User] = None, 
+                               fields: typing.List[typing.Dict],  # name: str , value: str, inline: optional bool
+                               *,
+                               owner: typing.Optional[discord.User] = None,
                                timeout: int = 600,
                                title: typing.Optional[str] = '',
                                description: typing.Optional[str] = None,
                                color: typing.Union[discord.Colour, int, None] = discord.Embed.Empty,
                                author: typing.Optional[typing.Dict] = None,
-                               page_character_limit: typing.Optional[int] = 6000) -> discord.Message: # author = name: str, icon_url: optional str
+                               page_character_limit: typing.Optional[int] = 6000) -> discord.Message:  # author = name: str, icon_url: optional str
     '''Displays an interactive paginated embed of given fields, with optional owner-locking, until timed out.'''
 
     PAGE_TEMPLATE = '(Page {0}/{1})'
@@ -475,7 +495,8 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
     FOOTER_ENDED_BY = 'Ended by {0}'
 
     # Find the page character cap
-    footer_max_length = len(PAGE_TEMPLATE) + max(len(FOOTER_INSTRUCTION), len(FOOTER_ENDED_BY.format('-'*37))) + 4 # 37 = max len(discordtag...#0000)
+    footer_max_length = len(PAGE_TEMPLATE) + max(len(FOOTER_INSTRUCTION),
+                                                 len(FOOTER_ENDED_BY.format('-' * 37))) + 4  # 37 = max len(discordtag...#0000)
     title_max_length = len(title) + len(FOOTER_INSTRUCTION) + 1
     description_length = 0 if not description else len(description)
     author_length = 0 if not author else len(author['name'])
@@ -491,12 +512,14 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
         for field in fields.copy():
             field_length = len(field['name']) + len(field['value'])
 
-            if remaining_chars - field_length < 0: break
+            if remaining_chars - field_length < 0:
+                break
             remaining_chars -= field_length
-    
+
             page.append(fields.pop(0))
 
-            if len(page) == 25: break
+            if len(page) == 25:
+                break
 
         pages.append(page)
 
@@ -508,7 +531,7 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
     dm_channel = not isinstance(channel, discord.TextChannel)
 
     if not (single_page or dm_channel):
-        # Setup messages, we wait to update the embed later so users don't click reactions before we're setup 
+        # Setup messages, we wait to update the embed later so users don't click reactions before we're setup
         message = await channel.send('Please wait...')
         await message.add_reaction('⬅')
         await message.add_reaction('⏹')
@@ -516,15 +539,17 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
 
     # Init embed
     embed = discord.Embed(description=None if not description else description, colour=color)
-    if author: embed.set_author(name=author['name'], icon_url=embed.Empty if not 'icon_url' in author else author['icon_url'])
+    if author:
+        embed.set_author(name=author['name'], icon_url=embed.Empty if not 'icon_url' in author else author['icon_url'])
     embed.set_footer(icon_url=embed.Empty if not owner else owner.avatar_url)
 
     # Main loop
-    while True: # Loop end conditions: User request, reaction listening timeout, or only 1 page (short circuit)
+    while True:  # Loop end conditions: User request, reaction listening timeout, or only 1 page (short circuit)
         # Add Fields
         embed.clear_fields()
-        for field in pages[current_page-1]:
-            embed.add_field(name=field['name'], value=field['value'], inline=True if not 'inline' in field else field['inline'])
+        for field in pages[current_page - 1]:
+            embed.add_field(name=field['name'], value=field['value'],
+                            inline=True if not 'inline' in field else field['inline'])
 
         page_text = PAGE_TEMPLATE.format(current_page, len(pages))
         embed.title = f'{title} {page_text}'
@@ -544,7 +569,7 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
 
             elif current_page == len(pages):
                 break
-            
+
             else:
                 current_page += 1
                 continue
@@ -552,14 +577,18 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
         else:
             embed.set_footer(text=f'{page_text}    {FOOTER_INSTRUCTION}', icon_url=embed.footer.icon_url)
             await message.edit(content='', embed=embed)
-        
+
         # Check user reaction
         def check(reaction, user):
-            if user.id == bot.user.id: False
-            if owner and user.id != owner.id: return False
+            if user.id == bot.user.id:
+                False
+            if owner and user.id != owner.id:
+                return False
 
-            if reaction.message.id != message.id: return False
-            if not reaction.emoji in ['⬅', '➡', '⏹']: return False
+            if reaction.message.id != message.id:
+                return False
+            if not reaction.emoji in ['⬅', '➡', '⏹']:
+                return False
 
             return True
 
@@ -568,16 +597,18 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
             reaction, user = await bot.wait_for('reaction_add', timeout=timeout, check=check)
         except asyncio.TimeoutError:
             break
-        
+
         await reaction.remove(user)
 
         # Change page
         if reaction.emoji == '⬅':
-            if current_page == 1: continue
+            if current_page == 1:
+                continue
             current_page -= 1
 
         elif reaction.emoji == '➡':
-            if current_page == len(pages): continue
+            if current_page == len(pages):
+                continue
             current_page += 1
 
         else:
@@ -595,6 +626,7 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
 
     return message
 
+
 def convert_list_to_fields(lines: str, codeblock: bool = True) -> typing.List[typing.Dict]:
     fields = []
 
@@ -603,18 +635,21 @@ def convert_list_to_fields(lines: str, codeblock: bool = True) -> typing.List[ty
 
         for line in lines.copy():
             staged = value + line + '\n'
-            if len(staged) + (3 if codeblock else 0) > 1024: break
+            if len(staged) + (3 if codeblock else 0) > 1024:
+                break
 
             lines.pop(0)
             value = staged
-            
+
         value += '```' if codeblock else ''
-        fields.append({'name': '\uFEFF', 'value': value, 'inline': False}) # \uFEFF = ZERO WIDTH NO-BREAK SPACE
+        fields.append({'name': '\uFEFF', 'value': value, 'inline': False})  # \uFEFF = ZERO WIDTH NO-BREAK SPACE
 
     return fields
 
+
 def setup(bot):
     logging.info('[Extension] Utils module loaded')
+
 
 def teardown(bot):
     logging.info('[Extension] Utils module unloaded')

@@ -25,19 +25,21 @@ import config
 import tools
 
 mclient = pymongo.MongoClient(
-	config.mongoHost,
-	username=config.mongoUser,
-	password=config.mongoPass
+    config.mongoHost,
+    username=config.mongoUser,
+    password=config.mongoPass
 )
+
 
 class SocialFeatures(commands.Cog, name='Social Commands'):
     def __init__(self, bot):
         self.bot = bot
         self.inprogressEdits = {}
-        self.letterCodepoints = ['1f1e6', '1f1e7', '1f1e8', '1f1e9', '1f1ea', '1f1eb', '1f1ec', '1f1ed', '1f1ee', '1f1ef', '1f1f0', '1f1f1', '1f1f2', '1f1f3', '1f1f4', '1f1f5', '1f1f6', '1f1f7', '1f1f8', '1f1f9', '1f1fa', '1f1fb', '1f1fc', '1f1fd', '1f1fe', '1f1ff']
+        self.letterCodepoints = ['1f1e6', '1f1e7', '1f1e8', '1f1e9', '1f1ea', '1f1eb', '1f1ec', '1f1ed', '1f1ee', '1f1ef', '1f1f0', '1f1f1',
+                                 '1f1f2', '1f1f3', '1f1f4', '1f1f5', '1f1f6', '1f1f7', '1f1f8', '1f1f9', '1f1fa', '1f1fb', '1f1fc', '1f1fd', '1f1fe', '1f1ff']
         self.twemojiPath = 'resources/twemoji/assets/72x72/'
-        
-        self.friendCodeRegex = { # Friend Code Regexs (\u2014 = em-dash)
+
+        self.friendCodeRegex = {  # Friend Code Regexs (\u2014 = em-dash)
             # Profile setup/editor (lenient)
             "profile": re.compile(r'(?:sw)?[ \-\u2014]?(\d{4})[ \-\u2014]?(\d{4})[ \-\u2014]?(\d{4})', re.I),
             # Chat filter, "It appears you've sent a friend code." Requires separators and discards select prefixes.
@@ -48,12 +50,13 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
     @commands.group(name='profile', invoke_without_command=True)
     @commands.cooldown(2, 60, commands.BucketType.channel)
     async def _profile(self, ctx, member: typing.Optional[discord.Member]):
-        if not member: member = ctx.author
+        if not member:
+            member = ctx.author
         db = mclient.bowser.users
         dbUser = db.find_one({'_id': member.id})
 
         # If profile not setup, running on self, not a mod, and not in commands channel: disallow running profile command
-        if not dbUser['profileSetup'] and member == ctx.author and ctx.guild.get_role(config.moderator) not in ctx.author.roles and ctx.channel.id != config.commandsChannel: 
+        if not dbUser['profileSetup'] and member == ctx.author and ctx.guild.get_role(config.moderator) not in ctx.author.roles and ctx.channel.id != config.commandsChannel:
             await ctx.message.delete()
             return await ctx.send(f'{config.redTick} {ctx.author.mention} You need to setup your profile to view it outside of <#{config.commandsChannel}>! To setup your profile, use `!profile edit` in <#{config.commandsChannel}>.', delete_after=15)
 
@@ -76,12 +79,15 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
         pfp = Image.open(io.BytesIO(await member.avatar_url_as(format='png', size=256).read())).convert("RGBA").resize((250, 250))
         pfpBack = Image.open('resources/pfp-background.png').convert('RGBA')
         pfpBack.paste(pfp, (50, 170), pfp)
-        card = Image.open('resources/profile-{}.png'.format(dbUser['background'])).convert("RGBA")
+        card = Image.open(
+            'resources/profile-{}.png'.format(dbUser['background'])).convert("RGBA")
         pfpBack.paste(card, mask=card)
         card = pfpBack
         snoo = Image.open('resources/snoo.png').convert("RGBA")
-        trophyUnderline = Image.open('resources/trophy-case-underline.png').convert("RGBA")
-        gameUnderline = Image.open('resources/favorite-games-underline.png').convert("RGBA")
+        trophyUnderline = Image.open(
+            'resources/trophy-case-underline.png').convert("RGBA")
+        gameUnderline = Image.open(
+            'resources/favorite-games-underline.png').convert("RGBA")
 
         card.paste(snoo, (50, 50), snoo)
         card.paste(trophyUnderline, (1150, 100), trophyUnderline)
@@ -89,13 +95,14 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
 
         # Start header/static text
         draw = ImageDraw.Draw(card)
-        draw.text((150, 50), '/r/NintendoSwitch Discord', (45, 45, 45), font=metaFont)
+        draw.text((150, 50), '/r/NintendoSwitch Discord',
+                  (45, 45, 45), font=metaFont)
         draw.text((150, 90), 'User Profile', (126, 126, 126), font=metaFont)
         draw.text((60, 470), 'Member since', (126, 126, 126), font=smallFont)
         draw.text((440, 470), 'Messages sent', (126, 126, 126), font=smallFont)
         draw.text((800, 470), 'Timezone', (126, 126, 126), font=smallFont)
         draw.text((60, 595), 'Favorite games', (45, 45, 45), font=mediumFont)
-        #draw.text((800, 600), 'Looking for group', (126, 126, 126), font=smallFont) # TODO: Find a way to see if game is online enabled
+        # draw.text((800, 600), 'Looking for group', (126, 126, 126), font=smallFont) # TODO: Find a way to see if game is online enabled
         draw.text((1150, 45), 'Trophy case', (45, 45, 45), font=mediumFont)
 
         # Start customized content -- userinfo
@@ -109,7 +116,8 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
             else:
                 if memberName:
                     W, nameH = draw.textsize(memberName, font=userFont)
-                    draw.text((nameW, 215), memberName, (80, 80, 80), font=userFont)
+                    draw.text((nameW, 215), memberName,
+                              (80, 80, 80), font=userFont)
                     nameW += W
                     memberName = ''
 
@@ -119,41 +127,49 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
                     unicodePoint.append(hex(x)[2:])
 
                 unicodeChar = '-'.join(unicodePoint)
-                emojiPic = Image.open(self.twemojiPath + unicodeChar + '.png').convert('RGBA').resize((40, 40))
+                emojiPic = Image.open(
+                    self.twemojiPath + unicodeChar + '.png').convert('RGBA').resize((40, 40))
                 card.paste(emojiPic, (nameW + 3, 228), emojiPic)
                 nameW += 46
 
-        if memberName: # Leftovers, text
+        if memberName:  # Leftovers, text
             draw.text((nameW, 215), memberName, (80, 80, 80), font=userFont)
 
-        draw.text((350, 275), '#' + member.discriminator, (126, 126, 126), font=subtextFont)
+        draw.text((350, 275), '#' + member.discriminator,
+                  (126, 126, 126), font=subtextFont)
 
         if dbUser['regionFlag']:
-            regionImg = Image.open(self.twemojiPath + dbUser['regionFlag'] + '.png').convert('RGBA')
+            regionImg = Image.open(
+                self.twemojiPath + dbUser['regionFlag'] + '.png').convert('RGBA')
             card.paste(regionImg, (976, 50), regionImg)
 
         # Friend code
         if dbUser['friendcode']:
-            draw.text((350, 330), dbUser['friendcode'], (87, 111, 251), font=subtextFont)
+            draw.text((350, 330), dbUser['friendcode'],
+                      (87, 111, 251), font=subtextFont)
 
         # Start customized content -- stats
-        draw.text((440, 505), f'{mclient.bowser.messages.find({"author": member.id}).count():,}', (80, 80, 80), font=mediumFont)
+        draw.text((440, 505), f'{mclient.bowser.messages.find({"author": member.id}).count():,}', (
+            80, 80, 80), font=mediumFont)
 
         joins = dbUser['joins']
         joins.sort()
         joinDate = datetime.datetime.utcfromtimestamp(joins[0])
-        try: # -d doesn't work on all platforms, such as Windows
+        try:  # -d doesn't work on all platforms, such as Windows
             joinDateF = joinDate.strftime('%b. %-d, %Y')
         except:
             joinDateF = joinDate.strftime('%b. %d, %Y')
         draw.text((60, 505), joinDateF, (80, 80, 80), font=mediumFont)
 
         if not dbUser['timezone']:
-            draw.text((800, 505), 'Not specified', (126, 126, 126), font=mediumFont)
+            draw.text((800, 505), 'Not specified',
+                      (126, 126, 126), font=mediumFont)
 
         else:
-            tzOffset = datetime.datetime.now(pytz.timezone(dbUser['timezone'])).strftime('%z')
-            draw.text((800, 505), 'GMT' + tzOffset, (80, 80, 80), font=mediumFont)
+            tzOffset = datetime.datetime.now(
+                pytz.timezone(dbUser['timezone'])).strftime('%z')
+            draw.text((800, 505), 'GMT' + tzOffset,
+                      (80, 80, 80), font=mediumFont)
 
         # Start trophies
         trophyLocations = {
@@ -179,47 +195,50 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
                 trophies.append(x)
 
         # Hardcoding IDs like a genius
-        if member.id == guild.owner.id: # Server owner
+        if member.id == guild.owner.id:  # Server owner
             trophies.append('owner')
 
         app_info = await self.bot.application_info()
 
-        if member.id in [app_info.owner.id, 123879073972748290]: # Developer
+        if member.id in [app_info.owner.id, 123879073972748290]:  # Developer
             trophies.append('developer')
 
-        if guild.get_role(config.chatmod) in member.roles: # Chat-mod role
+        if guild.get_role(config.chatmod) in member.roles:  # Chat-mod role
             trophies.append('chat-mod')
 
-        if guild.get_role(config.submod) in member.roles: # Sub-mod role
+        if guild.get_role(config.submod) in member.roles:  # Sub-mod role
             trophies.append('sub-mod')
 
-        if guild.get_role(config.modemeritus) in member.roles or guild.get_role(config.submodemeritus) in member.roles: # Mod emeritus
+        if guild.get_role(config.modemeritus) in member.roles or guild.get_role(config.submodemeritus) in member.roles:  # Mod emeritus
             trophies.append('mod-emeritus')
 
-        if guild.get_role(config.helpfulUser) in member.roles: # Helpful user
+        if guild.get_role(config.helpfulUser) in member.roles:  # Helpful user
             trophies.append('helpful-user')
 
-        if guild.get_role(config.boostRole) in member.roles: # Booster role
+        if guild.get_role(config.boostRole) in member.roles:  # Booster role
             trophies.append('booster')
 
-        if len(trophies) < 15: # Check for additional non-prefered trophies
+        if len(trophies) < 15:  # Check for additional non-prefered trophies
             for x in dbUser['trophies']:
-                if x not in trophies: trophies.append(x)
+                if x not in trophies:
+                    trophies.append(x)
 
         while len(trophies) < 15:
             trophies.append('blank')
 
         trophyNum = 0
         for x in trophies:
-            trophyBadge = Image.open('resources/trophies/' + x + '.png').convert('RGBA')
+            trophyBadge = Image.open(
+                'resources/trophies/' + x + '.png').convert('RGBA')
             card.paste(trophyBadge, trophyLocations[trophyNum], trophyBadge)
             trophyNum += 1
 
         # Start favorite games
         setGames = dbUser['favgames']
         if not setGames:
-            draw.text((60, 665), 'Not specified', (126, 126, 126), font=mediumFont)
-        
+            draw.text((60, 665), 'Not specified',
+                      (126, 126, 126), font=mediumFont)
+
         else:
             gameIconLocations = {
                 0: (60, 665),
@@ -237,12 +256,16 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
                 gameDoc = gamesDb.find_one({'_id': game})
                 if fs.exists(game):
                     gameImg = fs.get(game)
-                    gameIcon = Image.open(gameImg).convert('RGBA').resize((45, 45))
-                    card.paste(gameIcon, gameIconLocations[gameCount], gameIcon)
+                    gameIcon = Image.open(gameImg).convert(
+                        'RGBA').resize((45, 45))
+                    card.paste(
+                        gameIcon, gameIconLocations[gameCount], gameIcon)
 
                 else:
-                    missingImage = Image.open('resources/missing-game.png').convert("RGBA").resize((45, 45))
-                    card.paste(missingImage, gameIconLocations[gameCount], missingImage)
+                    missingImage = Image.open(
+                        'resources/missing-game.png').convert("RGBA").resize((45, 45))
+                    card.paste(
+                        missingImage, gameIconLocations[gameCount], missingImage)
 
                 if gameDoc['titles']['NA']:
                     gameName = gameDoc['titles']['NA']
@@ -258,10 +281,12 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
 
                 for char in gameName:
                     if nameW >= nameWMax:
-                        draw.text((nameW, gameTextLocations[gameCount]), '...', (80, 80, 80), font=mediumFont)
+                        draw.text(
+                            (nameW, gameTextLocations[gameCount]), '...', (80, 80, 80), font=mediumFont)
                         break
 
-                    draw.text((nameW, gameTextLocations[gameCount]), char, (80, 80, 80), font=mediumFont)
+                    draw.text(
+                        (nameW, gameTextLocations[gameCount]), char, (80, 80, 80), font=mediumFont)
                     nameW += mediumFont.getsize(char)[0]
                 gameCount += 1
 
@@ -275,7 +300,7 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
         dbUser = db.find_one({'_id': ctx.author.id})
         mainMsg = None
 
-        if ctx.guild.get_role(config.moderator) not in ctx.author.roles and ctx.channel.id != config.commandsChannel: # commands
+        if ctx.guild.get_role(config.moderator) not in ctx.author.roles and ctx.channel.id != config.commandsChannel:  # commands
             await ctx.message.delete()
             return await ctx.send(f'{config.redTick} {ctx.author.mention} Please use bot commands in <#{config.commandsChannel}>, not {ctx.channel.mention}', delete_after=15)
 
@@ -296,7 +321,7 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
             False: f'{headerBase}\n\n'
         }
 
-        embedText = { 
+        embedText = {
             'title': {
                 True: 'Edit your user profile',
                 False: 'Setup your user profile'
@@ -314,39 +339,46 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
             response = await self.bot.wait_for('message', timeout=120, check=check)
 
             content = response.content.lower().strip()
-            if response.content.lower().strip() == 'skip': return True
+            if response.content.lower().strip() == 'skip':
+                return True
             if response.content.lower().strip() == 'reset':
-                db.update_one({'_id': ctx.author.id}, {'$set': {'friendcode': None}})
+                db.update_one({'_id': ctx.author.id}, {
+                              '$set': {'friendcode': None}})
                 await message.channel.send('I\'ve gone ahead and reset your setting for **friend code**')
                 return True
 
             code = re.search(self.friendCodeRegex['profile'], content)
-            if code: # re match
+            if code:  # re match
                 friendcode = f'SW-{code.group(1)}-{code.group(2)}-{code.group(3)}'
-                db.update_one({'_id': ctx.author.id}, {'$set': {'friendcode': friendcode}})
+                db.update_one({'_id': ctx.author.id}, {
+                              '$set': {'friendcode': friendcode}})
                 return True
 
             else:
                 return False
-                   
+
         async def _phase2(message):
             response = await self.bot.wait_for('message', timeout=120, check=check)
 
             content = response.content.strip()
-            if response.content.lower().strip() == 'skip': return True
+            if response.content.lower().strip() == 'skip':
+                return True
             if response.content.lower().strip() == 'reset':
-                db.update_one({'_id': ctx.author.id}, {'$set': {'regionFlag': None}})
+                db.update_one({'_id': ctx.author.id}, {
+                              '$set': {'regionFlag': None}})
                 await message.channel.send('I\'ve gone ahead and reset your setting for **regional flag**')
                 return True
 
             for x in content:
-                if x not in UNICODE_EMOJI: return False
+                if x not in UNICODE_EMOJI:
+                    return False
 
             rawPoints = tuple(codepoints.from_unicode(content))
             points = []
 
             for x in rawPoints:
-                if str(hex(x)[2:]) not in self.letterCodepoints: # Flags are the 2 letter abbrev. in regional letter emoji
+                # Flags are the 2 letter abbrev. in regional letter emoji
+                if str(hex(x)[2:]) not in self.letterCodepoints:
                     return False
 
                 points.append(str(hex(x)[2:]))
@@ -355,22 +387,26 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
             if not Path(f'{self.twemojiPath}{pointStr}.png').is_file():
                 return False
 
-            db.update_one({'_id': ctx.author.id}, {'$set': {'regionFlag': pointStr}})
+            db.update_one({'_id': ctx.author.id}, {
+                          '$set': {'regionFlag': pointStr}})
             return True
 
         async def _phase3(message):
             response = await self.bot.wait_for('message', timeout=300, check=check)
 
             content = response.content.lower().strip()
-            if response.content.lower().strip() == 'skip': return True
+            if response.content.lower().strip() == 'skip':
+                return True
             if response.content.lower().strip() == 'reset':
-                db.update_one({'_id': ctx.author.id}, {'$set': {'timezone': None}})
+                db.update_one({'_id': ctx.author.id}, {
+                              '$set': {'timezone': None}})
                 await message.channel.send('I\'ve gone ahead and reset your setting for **timezone**')
                 return True
 
             for x in pytz.all_timezones:
                 if content == x.lower():
-                    db.update_one({'_id': ctx.author.id}, {'$set': {'timezone': x}})
+                    db.update_one({'_id': ctx.author.id}, {
+                                  '$set': {'timezone': x}})
                     return True
 
             return False
@@ -380,14 +416,18 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
             failedFetch = False
             userGames = []
             while gameCnt < 3:
-                if failedFetch: await message.channel.send(f'{config.redTick} Hmm, I can\'t add that game. Make sure you typed the game name correctly and don\'t add the same game twice.\n\n' + phase4.format(gameCnt))
-                else: await message.channel.send(phase4.format(gameCnt))
+                if failedFetch:
+                    await message.channel.send(f'{config.redTick} Hmm, I can\'t add that game. Make sure you typed the game name correctly and don\'t add the same game twice.\n\n' + phase4.format(gameCnt))
+                else:
+                    await message.channel.send(phase4.format(gameCnt))
                 failedFetch = False
 
                 response = await self.bot.wait_for('message', timeout=180, check=check)
-                if response.content.lower().strip() == 'skip': break
+                if response.content.lower().strip() == 'skip':
+                    break
                 if response.content.lower().strip() == 'reset':
-                    db.update_one({'_id': ctx.author.id}, {'$set': {'favgames': []}})
+                    db.update_one({'_id': ctx.author.id}, {
+                                  '$set': {'favgames': []}})
                     await message.channel.send('I\'ve gone ahead and reset your setting for **favorite games**')
                     return True
 
@@ -408,12 +448,15 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
 
                 for gameEntry in games.values():
                     for title in gameEntry['titles'].values():
-                        if not title or title in titleList.keys(): continue
+                        if not title or title in titleList.keys():
+                            continue
                         titleList[title] = gameEntry['_id']
 
                 results = process.extract(content, titleList.keys(), limit=2)
                 if results and results[0][1] >= 86:
-                    if gameCnt == 0 and dbUser['favgames']: db.update_one({'_id': ctx.author.id}, {'$set': {'favgames': []}})
+                    if gameCnt == 0 and dbUser['favgames']:
+                        db.update_one({'_id': ctx.author.id}, {
+                                      '$set': {'favgames': []}})
                     while True:
                         await message.channel.send(f'Is **{results[0][0]}** the game you are looking for? Type __yes__ or __no__')
                         checkResp = await self.bot.wait_for('message', timeout=120, check=check)
@@ -423,7 +466,8 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
                                 failedFetch = True
                                 break
 
-                            db.update_one({'_id': ctx.author.id}, {'$push': {'favgames': gameObj['_id']}})
+                            db.update_one({'_id': ctx.author.id}, {
+                                          '$push': {'favgames': gameObj['_id']}})
                             gameCnt += 1
                             userGames.append(gameObj['_id'])
                             break
@@ -450,13 +494,15 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
 
                     content = response.content.lower().strip()
                     if response.content.lower().strip() == 'reset':
-                        db.update_one({'_id': ctx.author.id}, {'$set': {'background': 'default'}})
+                        db.update_one({'_id': ctx.author.id}, {
+                                      '$set': {'background': 'default'}})
                         await message.channel.send('I\'ve gone ahead and reset your setting for **profile background**')
                         return True
 
                     elif content != 'skip':
                         if content in backgrounds:
-                            db.update_one({'_id': ctx.author.id}, {'$set': {'background': content}})
+                            db.update_one({'_id': ctx.author.id}, {
+                                          '$set': {'background': content}})
                             break
 
                         else:
@@ -465,13 +511,12 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
                     else:
                         break
 
-
         profileSetup = dbUser['profileSetup']
 
-        embed = discord.Embed(title=embedText['title'][profileSetup], description=embedText["descBase"][profileSetup] + \
-                                '\nYou can customize the following values:\n\n･ Your Nintendo Switch friend code\n･ The regional flag for your country' \
-                                '\n･ Your timezone\n･ Up to three (3) of your favorite Nintendo Switch games\n･ The background theme of your profile' \
-                                '\n\nWhen prompted, simply reply with what you would like to set the field as.')
+        embed = discord.Embed(title=embedText['title'][profileSetup], description=embedText["descBase"][profileSetup] +
+                              '\nYou can customize the following values:\n\n･ Your Nintendo Switch friend code\n･ The regional flag for your country'
+                              '\n･ Your timezone\n･ Up to three (3) of your favorite Nintendo Switch games\n･ The background theme of your profile'
+                              '\n\nWhen prompted, simply reply with what you would like to set the field as.')
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
 
         try:
@@ -480,13 +525,14 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
             await ctx.message.add_reaction('📬')
             private = True
 
-        except discord.Forbidden: # DMs not allowed, try in channel
+        except discord.Forbidden:  # DMs not allowed, try in channel
             private = False
             return await ctx.send(f'{config.redTick} {ctx.author.mention} To edit your profile you\'ll need to open your DMs. I was unable to message you')
             mainMsg = await ctx.send(ctx.author.mention, embed=embed)
 
         if not profileSetup:
-            db.update_one({'_id': ctx.author.id}, {'$set': {'profileSetup': True}})
+            db.update_one({'_id': ctx.author.id}, {
+                          '$set': {'profileSetup': True}})
 
         botMsg = await mainMsg.channel.send(header[profileSetup] + phase1)
         try:
@@ -524,7 +570,6 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
                 else:
                     phaseSuccess = True
 
-
             phaseStart = time.time()
             phaseSuccess = False
 
@@ -553,15 +598,18 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
             return
 
         content = re.sub(r'(<@!?\d+>)', '', message.content)
-        contains_code = tools.re_match_nonlink(self.friendCodeRegex['chatFilter'], content)
+        contains_code = tools.re_match_nonlink(
+            self.friendCodeRegex['chatFilter'], content)
 
-        if not contains_code: return
+        if not contains_code:
+            return
         if message.channel.id not in [config.commandsChannel, config.voiceTextChannel]:
             await message.channel.send(f'{message.author.mention} Hi! It appears you\'ve sent a **friend code**. An easy way to store and share your friend code is with our server profile system. To view your profile use the `!profile` command. To set details such as your friend code on your profile, use `!profile edit` in <#{config.commandsChannel}>. You can even see the profiles of other users with `!profile @user`')
 
     @_profile.error
     async def social_error(self, ctx, error):
-        cmd_str = ctx.command.full_parent_name + ' ' + ctx.command.name if ctx.command.parent else ctx.command.name
+        cmd_str = ctx.command.full_parent_name + ' ' + \
+            ctx.command.name if ctx.command.parent else ctx.command.name
 
         if isinstance(error, commands.CommandOnCooldown):
             if cmd_str == 'profile' and (ctx.message.channel.id in [config.commandsChannel, config.voiceTextChannel] or ctx.guild.get_role(config.moderator) in ctx.author.roles):
@@ -573,9 +621,11 @@ class SocialFeatures(commands.Cog, name='Social Commands'):
             await ctx.send(f'{config.redTick} An unknown exception has occured, if this continues to happen contact the developer.', delete_after=15)
             raise error
 
+
 def setup(bot):
     bot.add_cog(SocialFeatures(bot))
     logging.info('[Extension] Social module loaded')
+
 
 def teardown(bot):
     bot.remove_cog('SocialFeatures')

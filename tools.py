@@ -11,13 +11,13 @@ import pymongo
 
 import config
 
-mclient = pymongo.MongoClient(
-	config.mongoHost,
-	username=config.mongoUser,
-	password=config.mongoPass
-)
+mclient = pymongo.MongoClient(config.mongoHost,
+                              username=config.mongoUser,
+                              password=config.mongoPass)
 
-linkRe = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[#-_]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+linkRe = re.compile(
+    r'http[s]?://(?:[a-zA-Z]|[0-9]|[#-_]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+)
 
 archiveHeader = '# Message archive for guild "{0.name}" ({0.id})\nIncluded channels: {1}\n# Format:\n[date + time] Member ID/Message ID/Channel/Username - Message content\n----------------\n'
 timeUnits = {
@@ -28,10 +28,11 @@ timeUnits = {
     'w': lambda v: v * 60 * 60 * 24 * 7,
 }
 
+
 # Most NintenDeals code (decommissioned 4/25/2020) was removed on 12/09/2020
 # https://github.com/rNintendoSwitch/MechaBowser/commit/d1550f1f4951c35ca953e1ceacaae054fc9d4963
-
-async def message_archive(archive: typing.Union[discord.Message, list], edit=None):
+async def message_archive(archive: typing.Union[discord.Message, list],
+                          edit=None):
     db = mclient.modmail.logs
     if type(archive) != list:
         # Single message to archive
@@ -40,20 +41,34 @@ async def message_archive(archive: typing.Union[discord.Message, list], edit=Non
     archiveID = f'{archive[0].id}-{int(time.time() * 1000)}'
     if edit:
         db.insert_one({
-            '_id': archiveID,
-            'key': archiveID,
-            'open': False,
-            'created_at': str(archive[0].created_at),
-            'closed_at': str(archive[0].created_at),
-            'channel_id': str(archive[0].channel.id),
-            'guild_id': str(archive[0].guild.id),
-            'bot_id': str(config.parakarry),
+            '_id':
+            archiveID,
+            'key':
+            archiveID,
+            'open':
+            False,
+            'created_at':
+            str(archive[0].created_at),
+            'closed_at':
+            str(archive[0].created_at),
+            'channel_id':
+            str(archive[0].channel.id),
+            'guild_id':
+            str(archive[0].guild.id),
+            'bot_id':
+            str(config.parakarry),
             'recipient': {
-                'id': 0,
-                'name': archive[0].author.name,
-                'discriminator': archive[0].author.discriminator,
-                'avatar_url': str(archive[0].author.avatar_url_as(static_format='png', size=1024)),
-                'mod': False
+                'id':
+                0,
+                'name':
+                archive[0].author.name,
+                'discriminator':
+                archive[0].author.discriminator,
+                'avatar_url':
+                str(archive[0].author.avatar_url_as(static_format='png',
+                                                    size=1024)),
+                'mod':
+                False
             },
             'creator': {
                 'id': str(archive[0].author.id),
@@ -68,52 +83,68 @@ async def message_archive(archive: typing.Union[discord.Message, list], edit=Non
                 'discriminator': 0,
                 'avatar_url': ''
             },
-            'messages': [
-                {
-                    'timestamp': str(archive[0].created_at),
-                    'message_id': str(archive[0].id),
-                    'content': archive[0].content,
-                    'type': 'edit_before',
-                    'author': {
-                        'id': str(archive[0].author.id),
-                        'name': archive[0].author.name,
-                        'discriminator': archive[0].author.discriminator,
-                        'avatar_url': str(archive[0].author.avatar_url_as(static_format='png', size=1024)),
-                        'mod': False
-                    },
-                    'attachments': [x.url for x in archive[0].attachments]
+            'messages': [{
+                'timestamp': str(archive[0].created_at),
+                'message_id': str(archive[0].id),
+                'content': archive[0].content,
+                'type': 'edit_before',
+                'author': {
+                    'id':
+                    str(archive[0].author.id),
+                    'name':
+                    archive[0].author.name,
+                    'discriminator':
+                    archive[0].author.discriminator,
+                    'avatar_url':
+                    str(archive[0].author.avatar_url_as(static_format='png',
+                                                        size=1024)),
+                    'mod':
+                    False
                 },
-                {
-                    'timestamp': str(archive[1].created_at),
-                    'message_id': str(archive[1].id),
-                    'content': archive[1].content,
-                    'type': 'edit_after',
-                    'author': {
-                        'id': str(archive[1].author.id),
-                        'name': archive[1].author.name,
-                        'discriminator': archive[1].author.discriminator,
-                        'avatar_url': str(archive[1].author.avatar_url_as(static_format='png', size=1024)),
-                        'mod': False
-                    },
-                    'attachments': [x.url for x in archive[1].attachments]
-                }
-            ]
+                'attachments': [x.url for x in archive[0].attachments]
+            }, {
+                'timestamp': str(archive[1].created_at),
+                'message_id': str(archive[1].id),
+                'content': archive[1].content,
+                'type': 'edit_after',
+                'author': {
+                    'id':
+                    str(archive[1].author.id),
+                    'name':
+                    archive[1].author.name,
+                    'discriminator':
+                    archive[1].author.discriminator,
+                    'avatar_url':
+                    str(archive[1].author.avatar_url_as(static_format='png',
+                                                        size=1024)),
+                    'mod':
+                    False
+                },
+                'attachments': [x.url for x in archive[1].attachments]
+            }]
         })
-        
+
     else:
         messages = []
-        for msg in archive: # TODO: attachment CDN urls should be posted as message
+        for msg in archive:  # TODO: attachment CDN urls should be posted as message
             messages.append({
                 'timestamp': str(msg.created_at),
                 'message_id': str(msg.id),
                 'content': msg.content if msg.content else '',
                 'type': 'thread_message',
                 'author': {
-                    'id': str(msg.author.id),
-                    'name': msg.author.name,
-                    'discriminator': msg.author.discriminator,
-                    'avatar_url': str(msg.author.avatar_url_as(static_format='png', size=1024)),
-                    'mod': False
+                    'id':
+                    str(msg.author.id),
+                    'name':
+                    msg.author.name,
+                    'discriminator':
+                    msg.author.discriminator,
+                    'avatar_url':
+                    str(
+                        msg.author.avatar_url_as(static_format='png',
+                                                 size=1024)),
+                    'mod':
+                    False
                 },
                 'channel': {
                     'id': str(msg.channel.id),
@@ -135,7 +166,8 @@ async def message_archive(archive: typing.Union[discord.Message, list], edit=Non
                 'id': 0,
                 'name': '',
                 'discriminator': 0,
-                'avatar_url': 'https://cdn.discordapp.com/attachments/276036563866091521/695443024955834438/unknown.png',
+                'avatar_url':
+                'https://cdn.discordapp.com/attachments/276036563866091521/695443024955834438/unknown.png',
                 'mod': False
             },
             'creator': {
@@ -156,6 +188,7 @@ async def message_archive(archive: typing.Union[discord.Message, list], edit=Non
 
     return archiveID
 
+
 async def store_user(member, messages=0):
     db = mclient.bowser.users
     # Double check exists
@@ -171,30 +204,51 @@ async def store_user(member, messages=0):
         roleList.append(role.id)
 
     userData = {
-        '_id': member.id,
-	    'roles': roleList,
-	    'joins': [(datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(0)).total_seconds()],
-	    'leaves': [],
-        'lockdown': False,
-        'jailed': False,
-        'friendcode': None,
-        'timezone': None,
-        'modmail': True,
+        '_id':
+        member.id,
+        'roles':
+        roleList,
+        'joins': [(datetime.datetime.utcnow() -
+                   datetime.datetime.utcfromtimestamp(0)).total_seconds()],
+        'leaves': [],
+        'lockdown':
+        False,
+        'jailed':
+        False,
+        'friendcode':
+        None,
+        'timezone':
+        None,
+        'modmail':
+        True,
         'trophies': [],
         'trophyPreference': [],
         'favgames': [],
-        'regionFlag': None,
-        'profileSetup': False,
-        'background': 'default',
+        'regionFlag':
+        None,
+        'profileSetup':
+        False,
+        'background':
+        'default',
         'backgrounds': ['default']
     }
     db.insert_one(userData)
 
-async def issue_pun(user, moderator, _type, reason=None, expiry=None, active=True, context=None, _date=None, public=True, strike_count=None):
+
+async def issue_pun(user,
+                    moderator,
+                    _type,
+                    reason=None,
+                    expiry=None,
+                    active=True,
+                    context=None,
+                    _date=None,
+                    public=True,
+                    strike_count=None):
     db = mclient.bowser.puns
     timestamp = time.time() if not _date else _date
     docID = str(uuid.uuid4())
-    while db.find_one({'_id': docID}): # Uh oh, duplicate uuid generated
+    while db.find_one({'_id': docID}):  # Uh oh, duplicate uuid generated
         docID = str(uuid.uuid4())
 
     db.insert_one({
@@ -215,6 +269,7 @@ async def issue_pun(user, moderator, _type, reason=None, expiry=None, active=Tru
         'public_log_channel': None
     })
     return docID
+
 
 def resolve_duration(data):
     '''
@@ -240,6 +295,7 @@ def resolve_duration(data):
 
     return datetime.datetime.utcnow() + datetime.timedelta(seconds=value + 1)
 
+
 def humanize_duration(duration):
     '''
     Takes a datetime object and returns a prettified
@@ -253,15 +309,17 @@ def humanize_duration(duration):
         if duration.total_seconds() > 0:
             duration = datetime.datetime.today() + duration
         else:
-            duration = datetime.datetime.utcnow() - datetime.timedelta(seconds=duration.total_seconds())
+            duration = datetime.datetime.utcnow() - datetime.timedelta(
+                seconds=duration.total_seconds())
     diff_delta = duration - now
     diff = int(diff_delta.total_seconds())
-	
+
     if diff < 0:
-      diff = -diff
-      ago = ' ago'
-    else: ago = ''
-	
+        diff = -diff
+        ago = ' ago'
+    else:
+        ago = ''
+
     minutes, seconds = divmod(diff, 60)
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
@@ -281,9 +339,10 @@ def humanize_duration(duration):
 
             else:
                 expires.append('{} {}'.format(units[x], unit_strs[x]))
-    
+
     if not expires: return '0 seconds'
     return ', '.join(expires) + ago
+
 
 async def mod_cmd_invoke_delete(channel):
     if channel.id in config.showModCTX or channel.category_id in config.showModCTX:
@@ -292,8 +351,22 @@ async def mod_cmd_invoke_delete(channel):
     else:
         return True
 
-async def send_modlog(bot, channel, _type, footer, reason, user=None, username=None, userid=None, moderator=None, expires=None, extra_author=None, timestamp=None, public=False, delay=300):
-    if user: # Keep compatibility with sources without reliable user objects (i.e. ban), without forcing a long function every time
+
+async def send_modlog(bot,
+                      channel,
+                      _type,
+                      footer,
+                      reason,
+                      user=None,
+                      username=None,
+                      userid=None,
+                      moderator=None,
+                      expires=None,
+                      extra_author=None,
+                      timestamp=None,
+                      public=False,
+                      delay=300):
+    if user:  # Keep compatibility with sources without reliable user objects (i.e. ban), without forcing a long function every time
         username = str(user)
         userid = user.id
 
@@ -320,7 +393,7 @@ async def send_modlog(bot, channel, _type, footer, reason, user=None, username=N
     embed.set_footer(text=footer)
     embed.add_field(name='User', value=f'<@!{userid}>', inline=True)
     if moderator:
-        if not isinstance(moderator, str): # Convert to str
+        if not isinstance(moderator, str):  # Convert to str
             moderator = moderator.mention
 
         embed.add_field(name='Moderator', value=moderator, inline=True)
@@ -332,10 +405,19 @@ async def send_modlog(bot, channel, _type, footer, reason, user=None, username=N
     await channel.send(embed=embed)
     if public:
         event_loop = bot.loop
-        post_action = event_loop.call_later(delay, event_loop.create_task, send_public_modlog(bot, footer, bot.get_channel(config.publicModChannel), expires))
+        post_action = event_loop.call_later(
+            delay, event_loop.create_task,
+            send_public_modlog(bot, footer,
+                               bot.get_channel(config.publicModChannel),
+                               expires))
         return post_action
 
-async def send_public_modlog(bot, id, channel, expires=None, mock_document=None):
+
+async def send_public_modlog(bot,
+                             id,
+                             channel,
+                             expires=None,
+                             mock_document=None):
     db = mclient.bowser.puns
     doc = mock_document if not id else db.find_one({'_id': id})
 
@@ -359,16 +441,26 @@ async def send_public_modlog(bot, id, channel, expires=None, mock_document=None)
 
     author += f'| {user} ({user.id})'
 
-    embed = discord.Embed(color=config.punColors[doc['type']], timestamp=datetime.datetime.utcfromtimestamp(doc['timestamp']))
+    embed = discord.Embed(color=config.punColors[doc['type']],
+                          timestamp=datetime.datetime.utcfromtimestamp(
+                              doc['timestamp']))
     embed.set_author(name=author)
     embed.set_footer(text=id)
     embed.add_field(name='User', value=user.mention, inline=True)
     if expires:
         embed.add_field(name='Expires', value=expires)
     if doc['sensitive']:
-        embed.add_field(name='Reason', value='This action\'s reason has been marked sensitive by the moderation team and is hidden. See <#671003325495509012> for more information on why logs are marked sensitive')
-    elif doc['context'] == 'vote': # Warning review
-        embed.add_field(name='Reason', value='A moderator has reviewed a previous warning and reduced it by one level')
+        embed.add_field(
+            name='Reason',
+            value=
+            'This action\'s reason has been marked sensitive by the moderation team and is hidden. See <#671003325495509012> for more information on why logs are marked sensitive'
+        )
+    elif doc['context'] == 'vote':  # Warning review
+        embed.add_field(
+            name='Reason',
+            value=
+            'A moderator has reviewed a previous warning and reduced it by one level'
+        )
     else:
         embed.add_field(name='Reason', value=doc['reason'])
 
@@ -378,23 +470,32 @@ async def send_public_modlog(bot, id, channel, expires=None, mock_document=None)
     message = await channel.send(embed=embed)
 
     if id:
-        db.update_one({'_id': id}, {'$set': {
-            'public_log_message': message.id,
-            'public_log_channel': channel.id
-        }})
+        db.update_one({'_id': id}, {
+            '$set': {
+                'public_log_message': message.id,
+                'public_log_channel': channel.id
+            }
+        })
+
 
 def format_pundm(_type, reason, moderator, details=None, auto=False):
     infoStrs = {
-        'strike': f'You have received **{details} strike{"s" if (_type == "strike") and (details > 1) else ""}** on',
-        'destrike': f'Your **active strikes** have been reduced by **{details} strike{"s" if (_type == "destrike") and (details > 1) else ""}** on',
+        'strike':
+        f'You have received **{details} strike{"s" if (_type == "strike") and (details > 1) else ""}** on',
+        'destrike':
+        f'Your **active strikes** have been reduced by **{details} strike{"s" if (_type == "destrike") and (details > 1) else ""}** on',
         'warn': f'You have been **warned (now {details})** on',
-        'warnup': f'Your **warning level** has been **increased (now {details})** on',
-        'warndown': f'Your **warning level** has been **decreased (now {details})** on',
+        'warnup':
+        f'Your **warning level** has been **increased (now {details})** on',
+        'warndown':
+        f'Your **warning level** has been **decreased (now {details})** on',
         'warnclear': f'Your **warning** has been **cleared** on',
         'mute': f'You have been **muted ({details})** on',
         'unmute': f'Your **mute** has been **removed** on',
-        'blacklist': f'Your **{details} permissions** have been **restricted** on',
-        'unblacklist': f'Your **{details} permissions** have been **restored** on',
+        'blacklist':
+        f'Your **{details} permissions** have been **restricted** on',
+        'unblacklist':
+        f'Your **{details} permissions** have been **restored** on',
         'kick': 'You have been **kicked** from',
         'ban': 'You have been **banned** from',
         'automod-word': 'You have violated the word filter on'
@@ -417,11 +518,14 @@ def format_pundm(_type, reason, moderator, details=None, auto=False):
 
     return punDM
 
-def spans_overlap_link(string: str, spans: typing.List[typing.Tuple[int, int]]) -> typing.List[bool]:
+
+def spans_overlap_link(
+        string: str,
+        spans: typing.List[typing.Tuple[int, int]]) -> typing.List[bool]:
     '''
     Returns list of booleans for every character span passed (as `(start, end)`) if they overlap a link in given string.
     '''
-    START, END = (0, 1) # Consts for readablity of (start, end) tuples
+    START, END = (0, 1)  # Consts for readablity of (start, end) tuples
 
     links = linkRe.finditer(string)
 
@@ -440,7 +544,9 @@ def spans_overlap_link(string: str, spans: typing.List[typing.Tuple[int, int]]) 
 
     return overlaps
 
-def re_match_nonlink(pattern: typing.Pattern, string: str) -> typing.Optional[bool]:
+
+def re_match_nonlink(pattern: typing.Pattern,
+                     string: str) -> typing.Optional[bool]:
     '''
     Returns if any regex match for given pattern in string does not overlap a link.
 
@@ -457,17 +563,21 @@ def re_match_nonlink(pattern: typing.Pattern, string: str) -> typing.Optional[bo
     overlaps = spans_overlap_link(string, spans)
     return any(not overlap for overlap in overlaps)
 
-async def send_paginated_embed(bot:  discord.ext.commands.Bot,
-                               channel: discord.TextChannel,
-                               fields: typing.List[typing.Dict], # name: str , value: str, inline: optional bool
-                               *, 
-                               owner: typing.Optional[discord.User] = None, 
-                               timeout: int = 600,
-                               title: typing.Optional[str] = '',
-                               description: typing.Optional[str] = None,
-                               color: typing.Union[discord.Colour, int, None] = discord.Embed.Empty,
-                               author: typing.Optional[typing.Dict] = None,
-                               page_character_limit: typing.Optional[int] = 6000) -> discord.Message: # author = name: str, icon_url: optional str
+
+async def send_paginated_embed(
+    bot: discord.ext.commands.Bot,
+    channel: discord.TextChannel,
+    fields: typing.List[
+        typing.Dict],  # name: str , value: str, inline: optional bool
+    *,
+    owner: typing.Optional[discord.User] = None,
+    timeout: int = 600,
+    title: typing.Optional[str] = '',
+    description: typing.Optional[str] = None,
+    color: typing.Union[discord.Colour, int, None] = discord.Embed.Empty,
+    author: typing.Optional[typing.Dict] = None,
+    page_character_limit: typing.Optional[int] = 6000
+) -> discord.Message:  # author = name: str, icon_url: optional str
     '''Displays an interactive paginated embed of given fields, with optional owner-locking, until timed out.'''
 
     PAGE_TEMPLATE = '(Page {0}/{1})'
@@ -475,7 +585,9 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
     FOOTER_ENDED_BY = 'Ended by {0}'
 
     # Find the page character cap
-    footer_max_length = len(PAGE_TEMPLATE) + max(len(FOOTER_INSTRUCTION), len(FOOTER_ENDED_BY.format('-'*37))) + 4 # 37 = max len(discordtag...#0000)
+    footer_max_length = len(PAGE_TEMPLATE) + max(
+        len(FOOTER_INSTRUCTION), len(FOOTER_ENDED_BY.format(
+            '-' * 37))) + 4  # 37 = max len(discordtag...#0000)
     title_max_length = len(title) + len(FOOTER_INSTRUCTION) + 1
     description_length = 0 if not description else len(description)
     author_length = 0 if not author else len(author['name'])
@@ -493,7 +605,7 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
 
             if remaining_chars - field_length < 0: break
             remaining_chars -= field_length
-    
+
             page.append(fields.pop(0))
 
             if len(page) == 25: break
@@ -508,23 +620,30 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
     dm_channel = not isinstance(channel, discord.TextChannel)
 
     if not (single_page or dm_channel):
-        # Setup messages, we wait to update the embed later so users don't click reactions before we're setup 
+        # Setup messages, we wait to update the embed later so users don't click reactions before we're setup
         message = await channel.send('Please wait...')
         await message.add_reaction('⬅')
         await message.add_reaction('⏹')
         await message.add_reaction('➡')
 
     # Init embed
-    embed = discord.Embed(description=None if not description else description, colour=color)
-    if author: embed.set_author(name=author['name'], icon_url=embed.Empty if not 'icon_url' in author else author['icon_url'])
+    embed = discord.Embed(description=None if not description else description,
+                          colour=color)
+    if author:
+        embed.set_author(name=author['name'],
+                         icon_url=embed.Empty
+                         if not 'icon_url' in author else author['icon_url'])
     embed.set_footer(icon_url=embed.Empty if not owner else owner.avatar_url)
 
     # Main loop
-    while True: # Loop end conditions: User request, reaction listening timeout, or only 1 page (short circuit)
+    while True:  # Loop end conditions: User request, reaction listening timeout, or only 1 page (short circuit)
         # Add Fields
         embed.clear_fields()
-        for field in pages[current_page-1]:
-            embed.add_field(name=field['name'], value=field['value'], inline=True if not 'inline' in field else field['inline'])
+        for field in pages[current_page - 1]:
+            embed.add_field(
+                name=field['name'],
+                value=field['value'],
+                inline=True if not 'inline' in field else field['inline'])
 
         page_text = PAGE_TEMPLATE.format(current_page, len(pages))
         embed.title = f'{title} {page_text}'
@@ -539,20 +658,23 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
         elif dm_channel:
             if current_page >= 10:
                 if len(pages) > 10:
-                    await channel.send(f'Limited to 10 pages in DM channel. {len(pages) - 10} page{"s were" if len(pages) != 1 else " was"} not sent')
+                    await channel.send(
+                        f'Limited to 10 pages in DM channel. {len(pages) - 10} page{"s were" if len(pages) != 1 else " was"} not sent'
+                    )
                 break
 
             elif current_page == len(pages):
                 break
-            
+
             else:
                 current_page += 1
                 continue
 
         else:
-            embed.set_footer(text=f'{page_text}    {FOOTER_INSTRUCTION}', icon_url=embed.footer.icon_url)
+            embed.set_footer(text=f'{page_text}    {FOOTER_INSTRUCTION}',
+                             icon_url=embed.footer.icon_url)
             await message.edit(content='', embed=embed)
-        
+
         # Check user reaction
         def check(reaction, user):
             if user.id == bot.user.id: False
@@ -565,10 +687,12 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
 
         # Catch timeout
         try:
-            reaction, user = await bot.wait_for('reaction_add', timeout=timeout, check=check)
+            reaction, user = await bot.wait_for('reaction_add',
+                                                timeout=timeout,
+                                                check=check)
         except asyncio.TimeoutError:
             break
-        
+
         await reaction.remove(user)
 
         # Change page
@@ -587,15 +711,19 @@ async def send_paginated_embed(bot:  discord.ext.commands.Bot,
     if not (single_page or dm_channel):
         # Generate ended footer
         page_text = PAGE_TEMPLATE.format(current_page, len(pages))
-        footer_text = FOOTER_ENDED_BY.format(ended_by) if ended_by else 'Timed out'
-        embed.set_footer(text=f'{page_text}    {footer_text}', icon_url=embed.footer.icon_url)
+        footer_text = FOOTER_ENDED_BY.format(
+            ended_by) if ended_by else 'Timed out'
+        embed.set_footer(text=f'{page_text}    {footer_text}',
+                         icon_url=embed.footer.icon_url)
 
         await message.clear_reactions()
         await message.edit(embed=embed)
 
     return message
 
-def convert_list_to_fields(lines: str, codeblock: bool = True) -> typing.List[typing.Dict]:
+
+def convert_list_to_fields(lines: str,
+                           codeblock: bool = True) -> typing.List[typing.Dict]:
     fields = []
 
     while lines:
@@ -607,14 +735,20 @@ def convert_list_to_fields(lines: str, codeblock: bool = True) -> typing.List[ty
 
             lines.pop(0)
             value = staged
-            
+
         value += '```' if codeblock else ''
-        fields.append({'name': '\uFEFF', 'value': value, 'inline': False}) # \uFEFF = ZERO WIDTH NO-BREAK SPACE
+        fields.append({
+            'name': '\uFEFF',
+            'value': value,
+            'inline': False
+        })  # \uFEFF = ZERO WIDTH NO-BREAK SPACE
 
     return fields
 
+
 def setup(bot):
     logging.info('[Extension] Utils module loaded')
+
 
 def teardown(bot):
     logging.info('[Extension] Utils module unloaded')
